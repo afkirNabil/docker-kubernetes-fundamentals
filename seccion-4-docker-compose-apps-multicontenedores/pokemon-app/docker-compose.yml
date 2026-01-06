@@ -1,0 +1,48 @@
+services:
+  db:
+    container_name: ${MONGO_DB_NAME}
+    image: mongo:6.0
+    volumes:
+      - poke-vol:/data/db
+      # esta ruta s saca de docker hub. buscando volume
+    environment:
+      # - MONGO_INITDB_ROOT_USERNAME=mongoadmin
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    # ports:
+    #   - 27017:27017
+    # No es necesario mostrar / exponer el puerto de la base de datos fuera de la red. Ya que solo vamos a acceder a mongodb mediante mongo expres. Esto es mas seguro.
+    restart: always
+    # util si algun contenedor se cae, le indicamos al contenedor que se ejecute otra vez si falla, se detiene o falla.
+    command: ['--auth']
+
+  mongo-express:
+    depends_on:
+      - db
+    image: mongo-express:1.0.0-alpha.4
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USERNAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASSWORD}
+      ME_CONFIG_MONGODB_SERVER: ${MONGO_DB_NAME}
+    ports:
+      - 8080:8081
+    restart: always
+
+  poke-app:
+    depends_on:
+      - db
+      - mongo-express
+    image: klerith/pokemon-nest-app:1.0.0
+    ports:
+      - 3000:3000
+    environment:
+      - DB_NAME=${MONGO_DB_NAME}
+      - MONGODB=mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_DB_NAME}:27017
+      # Servicio con las credenciales, sustitumos localhost por el servidor de la bbdd d mongodb. Estarimos navegando en la red virutal que hemos creado para esta app.
+    restart: always
+
+
+volumes:
+  poke-vol:
+    external: false
+    # le indico a docker compose que crea el volumen siempre q ejecute el docker compose file. Sin buscar un volumen ya existente.

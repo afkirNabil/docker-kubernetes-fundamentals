@@ -1,0 +1,39 @@
+# version: '3'
+# indicamos la version del docker compose para q docker sepa q comandos ejecutar
+# parece ser q indicar la version esta deprecado ya.
+
+services:
+  db:
+  # nombre del servicio
+    container_name: postgres_database
+    # otro nombre del servicio diferente, para identificarlo en la red por ejemplo.
+    image: postgres:15.1
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+      # Bind volume: esto es para mapear los cambios q se hacen en el contenedor en propio sistema de archivos de mi proyecto.
+      # Ahora le indico que guarde los cambios en la ruta relativa del proyecto/postgres. Asi el docker compose crea el directorio tambien.
+      # - postgres-db:/var/lib/postgresql/data
+    # Terminar la configuracion del volumen abajo. Para indicar si crea uno nuevo o usa uno existente.
+    # Aqui le indico el volumen a usar.
+    environment:
+      - POSTGRES_PASSWORD=123456
+  
+  pgAdmin:
+    depends_on:
+      - db
+    image: dpage/pgadmin4:6.17
+    ports:
+      - "8080:80"
+    volumes:
+      - ./pgadmin:/var/lib/pgadmin
+      # Otro bind volume pero para el pgadmin, asi no tenemos que introducir los datos de conexcion todo el rato.
+    environment:
+      - PGADMIN_DEFAULT_PASSWORD=123456
+      - PGADMIN_DEFAULT_EMAIL=superman@google.com
+
+# Vamos a configurar el volumen. Pq hay dos maneras de q se cree automaticamente. Usando uno existente o creando uno nuevo. Pero eso hay q configurarlo aqui. Aunq las dos configuraciones son muy parecidas con un cambio sutil.
+# Aqui defino el volumen. Indicando si crear uno nuevo o usar uno existente.
+# volumes:
+#   postgres-db:
+#     external: true
+    # esto indica q usemos el volumen ya existente
